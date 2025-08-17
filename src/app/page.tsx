@@ -110,26 +110,25 @@ export default function Home() {
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
         const newPdfDoc = await PDFDocument.create();
 
-        const embeddedPages = await newPdfDoc.embedPages(pdfDoc.getPages());
-
-        for (const embeddedPage of embeddedPages) {
-          const { width, height } = embeddedPage.size();
+        for (const page of pdfDoc.getPages()) {
+          const { width, height } = page.getSize();
           const halfWidth = width / 2;
 
+          // Embed the original page
+          const embeddedPage = await newPdfDoc.embedPage(page);
+
+          // Create left page
           const leftPage = newPdfDoc.addPage([halfWidth, height]);
           leftPage.drawPage(embeddedPage, {
             x: 0,
             y: 0,
-            width: halfWidth,
-            height: height,
           });
 
+          // Create right page
           const rightPage = newPdfDoc.addPage([halfWidth, height]);
           rightPage.drawPage(embeddedPage, {
             x: -halfWidth,
             y: 0,
-            width: halfWidth,
-            height: height,
           });
         }
 
