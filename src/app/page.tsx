@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef } from "react";
@@ -108,26 +109,36 @@ export default function Home() {
       const file = files[i];
       try {
         const existingPdfBytes = await file.arrayBuffer();
-        const pdfDoc = await PDFDocument.load(existingPdfBytes);
+        const pdfDoc = await PDFDocument.load(existingPdfBytes, { 
+          // Some PDFs have issues with metadata, this can help
+          updateMetadata: false 
+        });
         const newPdfDoc = await PDFDocument.create();
 
         for (const page of pdfDoc.getPages()) {
           const { width, height } = page.getSize();
           const halfWidth = width / 2;
 
-          // Create left page
-          const leftPdf = await PDFDocument.create();
-          const [leftOriginalPage] = await leftPdf.copyPages(pdfDoc, [pdfDoc.getPageIndices()[pdfDoc.getPages().indexOf(page)]]);
-          leftOriginalPage.setCropBox(0, 0, halfWidth, height);
-          const [embeddedLeft] = await newPdfDoc.embedPdf(await leftPdf.save());
-          newPdfDoc.addPage([halfWidth, height]).drawPage(embeddedLeft);
+          // Embed the original page
+          const embeddedPage = await newPdfDoc.embedPage(page);
 
-          // Create right page
-          const rightPdf = await PDFDocument.create();
-          const [rightOriginalPage] = await rightPdf.copyPages(pdfDoc, [pdfDoc.getPageIndices()[pdfDoc.getPages().indexOf(page)]]);
-          rightOriginalPage.setCropBox(halfWidth, 0, halfWidth, height);
-          const [embeddedRight] = await newPdfDoc.embedPdf(await rightPdf.save());
-          newPdfDoc.addPage([halfWidth, height]).drawPage(embeddedRight, { x: -halfWidth });
+          // Create and draw left page
+          const leftPage = newPdfDoc.addPage([halfWidth, height]);
+          leftPage.drawPage(embeddedPage, {
+            x: 0,
+            y: 0,
+            width: halfWidth,
+            height: height,
+          });
+          
+          // Create and draw right page
+          const rightPage = newPdfDoc.addPage([halfWidth, height]);
+          rightPage.drawPage(embeddedPage, {
+            x: -halfWidth,
+            y: 0,
+            width: halfWidth,
+            height: height,
+          });
         }
 
         const newPdfBytes = await newPdfDoc.save();
@@ -312,3 +323,4 @@ export default function Home() {
     </div>
   );
 }
+    
