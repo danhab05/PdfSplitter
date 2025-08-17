@@ -110,20 +110,26 @@ export default function Home() {
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
         const newPdfDoc = await PDFDocument.create();
 
-        for (const page of pdfDoc.getPages()) {
-          const { width, height } = page.getSize();
+        const embeddedPages = await newPdfDoc.embedPages(pdfDoc.getPages());
+
+        for (const embeddedPage of embeddedPages) {
+          const { width, height } = embeddedPage.size();
           const halfWidth = width / 2;
 
           const leftPage = newPdfDoc.addPage([halfWidth, height]);
-          leftPage.drawPage(page, {
+          leftPage.drawPage(embeddedPage, {
             x: 0,
             y: 0,
+            width: halfWidth,
+            height: height,
           });
 
           const rightPage = newPdfDoc.addPage([halfWidth, height]);
-          rightPage.drawPage(page, {
+          rightPage.drawPage(embeddedPage, {
             x: -halfWidth,
             y: 0,
+            width: halfWidth,
+            height: height,
           });
         }
 
@@ -257,7 +263,7 @@ export default function Home() {
                 <div className="flex justify-center items-center">
                   <UploadCloud className="h-12 w-12 text-muted-foreground" />
                 </div>
-                <p className="mt-4 font-semibold text-lg">Drag &amp; drop files here</p>
+                <p className="mt-4 font-semibold text-lg">Drag & drop files here</p>
                 <p className="text-sm text-muted-foreground">or click to browse</p>
                 <p className="text-xs text-muted-foreground mt-2">Accepted format: .pdf</p>
                 <input
