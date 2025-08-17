@@ -14,10 +14,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { UploadCloud, FileText, Download, Package, Loader2, X } from "lucide-react";
+import { UploadCloud, FileText, Download, Package, Loader2, X, Scissors } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Footer } from "@/components/footer";
-
 
 type ProcessedFile = {
   originalName: string;
@@ -117,16 +116,18 @@ export default function Home() {
           const halfWidth = width / 2;
 
           // Create left page
-          const [leftPdfPage] = await newPdfDoc.copyPages(pdfDoc, [pdfDoc.getPages().indexOf(page)]);
-          leftPdfPage.setCropBox(0, 0, halfWidth, height);
-          
-          // Create right page
-          const [rightPdfPage] = await newPdfDoc.copyPages(pdfDoc, [pdfDoc.getPages().indexOf(page)]);
-          rightPdfPage.setCropBox(halfWidth, 0, halfWidth, height);
+          const leftPdf = await PDFDocument.create();
+          const [leftOriginalPage] = await leftPdf.copyPages(pdfDoc, [pdfDoc.getPageIndices()[pdfDoc.getPages().indexOf(page)]]);
+          leftOriginalPage.setCropBox(0, 0, halfWidth, height);
+          const [embeddedLeft] = await newPdfDoc.embedPdf(await leftPdf.save());
+          newPdfDoc.addPage([halfWidth, height]).drawPage(embeddedLeft);
 
-          // Add pages to the new document
-          newPdfDoc.addPage(leftPdfPage);
-          newPdfDoc.addPage(rightPdfPage);
+          // Create right page
+          const rightPdf = await PDFDocument.create();
+          const [rightOriginalPage] = await rightPdf.copyPages(pdfDoc, [pdfDoc.getPageIndices()[pdfDoc.getPages().indexOf(page)]]);
+          rightOriginalPage.setCropBox(halfWidth, 0, halfWidth, height);
+          const [embeddedRight] = await newPdfDoc.embedPdf(await rightPdf.save());
+          newPdfDoc.addPage([halfWidth, height]).drawPage(embeddedRight, { x: -halfWidth });
         }
 
         const newPdfBytes = await newPdfDoc.save();
@@ -157,7 +158,6 @@ export default function Home() {
       toast({
         title: "Processing Complete",
         description: `${newProcessedFiles.length} PDF(s) split successfully.`,
-        variant: "default",
       });
     }
   };
@@ -190,55 +190,56 @@ export default function Home() {
   };
   
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col items-center p-4 sm:p-8">
-      <header className="text-center mb-8">
-        <h1 className="text-4xl md:text-5xl font-bold font-headline">PDF Splitter</h1>
-        <p className="text-muted-foreground mt-2 max-w-2xl">
-          Easily split your double-page PDFs into single pages. Upload your files, and we'll handle the rest.
-        </p>
-      </header>
-      
-      <main className="w-full max-w-4xl">
-        {isProcessing ? (
-          <Card className="w-full">
-            <CardHeader>
-              <CardTitle>Processing your PDFs...</CardTitle>
-              <CardDescription>Please wait while we split your files. This may take a moment.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center space-y-4 p-10">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <Progress value={progress} className="w-full" />
-              <p className="text-sm text-muted-foreground">{Math.round(progress)}% complete</p>
-            </CardContent>
-          </Card>
-        ) : processedFiles.length > 0 ? (
-          <div className="space-y-6">
-            <Card>
+    <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4 sm:p-8">
+      <div className="flex-grow w-full flex flex-col items-center justify-center">
+        <header className="text-center mb-10">
+          <h1 className="text-4xl md:text-5xl font-bold font-headline tracking-tight">PDF Splitter</h1>
+          <p className="text-muted-foreground mt-3 max-w-xl mx-auto">
+            Easily split your double-page PDFs into single pages. Upload your files, and we'll handle the rest with precision.
+          </p>
+        </header>
+        
+        <main className="w-full max-w-4xl">
+          {isProcessing ? (
+            <Card className="w-full shadow-lg">
               <CardHeader>
-                <CardTitle>Your Split PDFs are Ready!</CardTitle>
-                <CardDescription>Download your files individually or get them all in a ZIP archive.</CardDescription>
+                <CardTitle>Processing your PDFs...</CardTitle>
+                <CardDescription>Please wait while we split your files. This may take a moment.</CardDescription>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {processedFiles.map((file, index) => (
-                  <Card key={index} className="flex flex-col bg-card hover:shadow-md transition-shadow">
-                    <CardHeader className="flex-row items-center gap-4 space-y-0 pb-4">
-                      <FileText className="h-8 w-8 text-primary shrink-0" />
-                      <p className="font-medium truncate" title={`split-${file.originalName}`}>{`split-${file.originalName}`}</p>
-                    </CardHeader>
-                    <CardFooter className="mt-auto pt-0">
-                      <Button asChild className="w-full">
-                        <a href={file.splitPdfUrl} download={`split-${file.originalName}`}>
-                          <Download className="mr-2 h-4 w-4" /> Download
-                        </a>
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
+              <CardContent className="flex flex-col items-center justify-center space-y-4 p-10">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <Progress value={progress} className="w-full" />
+                <p className="text-sm text-muted-foreground">{Math.round(progress)}% complete</p>
               </CardContent>
-              <CardFooter className="flex flex-col sm:flex-row justify-end gap-4 border-t pt-6 mt-6">
+            </Card>
+          ) : processedFiles.length > 0 ? (
+            <div className="space-y-6">
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle>Your Split PDFs are Ready!</CardTitle>
+                  <CardDescription>Download your files individually or get them all in a ZIP archive.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {processedFiles.map((file, index) => (
+                    <Card key={index} className="flex flex-col bg-card/50 hover:shadow-md transition-shadow">
+                      <CardHeader className="flex-row items-center gap-4 space-y-0 pb-4">
+                        <FileText className="h-8 w-8 text-primary shrink-0" />
+                        <p className="font-medium truncate" title={`split-${file.originalName}`}>{`split-${file.originalName}`}</p>
+                      </CardHeader>
+                      <CardFooter className="mt-auto pt-0">
+                        <Button asChild className="w-full">
+                          <a href={file.splitPdfUrl} download={`split-${file.originalName}`}>
+                            <Download /> Download
+                          </a>
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </CardContent>
+                <CardFooter className="flex flex-col sm:flex-row justify-end gap-4 border-t pt-6 mt-6">
                   <Button variant="outline" onClick={resetState}>Split More PDFs</Button>
                   <Button onClick={handleDownloadAll} disabled={processedFiles.length === 0}>
-                    <Package className="mr-2 h-4 w-4" /> Download All (.zip)
+                    <Package /> Download All (.zip)
                   </Button>
               </CardFooter>
             </Card>
@@ -247,15 +248,15 @@ export default function Home() {
           <div className="space-y-6">
             <Card 
               className={cn(
-                "border-2 border-dashed transition-colors duration-300",
-                isDragging ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
+                "border-2 border-dashed transition-colors duration-300 bg-transparent",
+                isDragging ? "border-primary bg-primary/10" : "border-border/50 hover:border-primary/50"
               )}
               onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
             >
-              <CardContent className="p-6 text-center cursor-pointer" onClick={triggerFileSelect}>
+              <CardContent className="p-10 text-center cursor-pointer" onClick={triggerFileSelect}>
                 <div className="flex justify-center items-center">
                   <UploadCloud className="h-12 w-12 text-muted-foreground" />
                 </div>
@@ -274,7 +275,7 @@ export default function Home() {
             </Card>
 
             {files.length > 0 && (
-              <Card>
+              <Card className="shadow-lg">
                 <CardHeader>
                   <CardTitle>Files to Process</CardTitle>
                   <CardDescription>{files.length} file(s) selected. Click "Split PDFs" to start.</CardDescription>
@@ -297,7 +298,7 @@ export default function Home() {
                 </CardContent>
                 <CardFooter className="justify-end border-t pt-6 mt-6">
                     <Button onClick={handleProcessPdfs} disabled={files.length === 0}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4"><path d="M5.42 9.42 8 12"/><path d="M16 12h-2"/><path d="M12 12h-2"/><path d="M22 12h-2"/><path d="M8.83 14.83 5.17 18.5"/><path d="M18.83 5.17 15.17 8.83"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="m22 2-8.5 8.5"/><path d="m14 14-8.5 8.5"/></svg>
+                        <Scissors />
                         Split PDFs
                     </Button>
                 </CardFooter>
@@ -305,7 +306,8 @@ export default function Home() {
             )}
           </div>
         )}
-      </main>
+        </main>
+      </div>
       <Footer />
     </div>
   );
