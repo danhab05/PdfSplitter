@@ -41,8 +41,8 @@ export default function Home() {
       );
       if (newFiles.length !== selectedFiles.length) {
         toast({
-          title: "Invalid file type",
-          description: "Only PDF files are accepted.",
+          title: "Type de fichier invalide",
+          description: "Seuls les fichiers PDF sont acceptés.",
           variant: "destructive",
         });
       }
@@ -93,8 +93,8 @@ export default function Home() {
   const handleProcessPdfs = async () => {
     if (files.length === 0) {
       toast({
-        title: "No files selected",
-        description: "Please upload at least one PDF file to process.",
+        title: "Aucun fichier sélectionné",
+        description: "Veuillez télécharger au moins un fichier PDF à traiter.",
         variant: "destructive",
       });
       return;
@@ -115,29 +115,29 @@ export default function Home() {
         const newPdfDoc = await PDFDocument.create();
 
         for (const originalPage of pdfDoc.getPages()) {
-          const { width, height } = originalPage.getSize();
-          const halfWidth = width / 2;
+            const { width, height } = originalPage.getSize();
+            const halfWidth = width / 2;
 
-          // Embed the original page
-          const [embeddedPage] = await newPdfDoc.embedPdf(existingPdfBytes, [pdfDoc.getPages().indexOf(originalPage)]);
+            const leftPage = newPdfDoc.addPage([halfWidth, height]);
+            const rightPage = newPdfDoc.addPage([halfWidth, height]);
 
-          // Create and draw left page
-          const leftPage = newPdfDoc.addPage([halfWidth, height]);
-          leftPage.drawPage(embeddedPage, {
-            x: 0,
-            y: 0,
-            width: width,
-            height: height,
-          });
+            const [embeddedPage] = await newPdfDoc.embedPdf(pdfDoc.getPages().indexOf(originalPage) < 0 ? await pdfDoc.copyPages(pdfDoc, [pdfDoc.getPages().indexOf(originalPage)]) : existingPdfBytes, [pdfDoc.getPages().indexOf(originalPage)]);
+            
+            // Draw left half
+            leftPage.drawPage(embeddedPage, {
+                x: 0,
+                y: 0,
+                width: width,
+                height: height,
+            });
 
-          // Create and draw right page
-          const rightPage = newPdfDoc.addPage([halfWidth, height]);
-          rightPage.drawPage(embeddedPage, {
-            x: -halfWidth,
-            y: 0,
-            width: width,
-            height: height,
-          });
+            // Draw right half
+            rightPage.drawPage(embeddedPage, {
+                x: -halfWidth,
+                y: 0,
+                width: width,
+                height: height,
+            });
         }
         
         const newPdfBytes = await newPdfDoc.save();
@@ -153,8 +153,8 @@ export default function Home() {
       } catch (err) {
         console.error(err);
         toast({
-          title: `Error processing ${file.name}`,
-          description: "The file might be corrupted or password-protected.",
+          title: `Erreur lors du traitement de ${file.name}`,
+          description: "Le fichier est peut-être corrompu ou protégé par un mot de passe.",
           variant: "destructive",
         });
       }
@@ -167,8 +167,8 @@ export default function Home() {
 
     if (newProcessedFiles.length > 0) {
       toast({
-        title: "Processing Complete",
-        description: `${newProcessedFiles.length} PDF(s) split successfully.`,
+        title: "Traitement terminé",
+        description: `${newProcessedFiles.length} PDF divisé(s) avec succès.`,
       });
     }
   };
@@ -193,8 +193,8 @@ export default function Home() {
     } catch(err) {
       console.error(err);
       toast({
-        title: "Failed to create ZIP",
-        description: "An error occurred while preparing the ZIP file for download.",
+        title: "Échec de la création du ZIP",
+        description: "Une erreur s'est produite lors de la préparation du fichier ZIP pour le téléchargement.",
         variant: "destructive",
       });
     }
@@ -204,9 +204,9 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4 sm:p-8">
       <div className="flex-grow w-full flex flex-col items-center justify-center">
         <header className="text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold font-headline tracking-tight">PDF Splitter</h1>
+          <h1 className="text-4xl md:text-5xl font-bold font-headline tracking-tight">Diviseur de PDF</h1>
           <p className="text-muted-foreground mt-3 max-w-xl mx-auto">
-            Easily split your double-page PDFs into single pages. Upload your files, and we'll handle the rest with precision.
+            Divisez facilement vos PDF de pages doubles en pages uniques. Téléchargez vos fichiers, et nous nous occupons du reste avec précision.
           </p>
         </header>
         
@@ -214,21 +214,21 @@ export default function Home() {
           {isProcessing ? (
             <Card className="w-full shadow-lg">
               <CardHeader>
-                <CardTitle>Processing your PDFs...</CardTitle>
-                <CardDescription>Please wait while we split your files. This may take a moment.</CardDescription>
+                <CardTitle>Traitement de vos PDF en cours...</CardTitle>
+                <CardDescription>Veuillez patienter pendant que nous divisons vos fichiers. Cela peut prendre un moment.</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col items-center justify-center space-y-4 p-10">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 <Progress value={progress} className="w-full" />
-                <p className="text-sm text-muted-foreground">{Math.round(progress)}% complete</p>
+                <p className="text-sm text-muted-foreground">{Math.round(progress)}% terminé</p>
               </CardContent>
             </Card>
           ) : processedFiles.length > 0 ? (
             <div className="space-y-6">
               <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle>Your Split PDFs are Ready!</CardTitle>
-                  <CardDescription>Download your files individually or get them all in a ZIP archive.</CardDescription>
+                  <CardTitle>Vos PDF divisés sont prêts !</CardTitle>
+                  <CardDescription>Téléchargez vos fichiers individuellement ou récupérez-les tous dans une archive ZIP.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {processedFiles.map((file, index) => (
@@ -240,7 +240,7 @@ export default function Home() {
                       <CardFooter className="mt-auto pt-0">
                         <Button asChild className="w-full">
                           <a href={file.splitPdfUrl} download={`split-${file.originalName}`}>
-                            <Download /> Download
+                            <Download /> Télécharger
                           </a>
                         </Button>
                       </CardFooter>
@@ -248,9 +248,9 @@ export default function Home() {
                   ))}
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row justify-end gap-4 border-t pt-6 mt-6">
-                  <Button variant="outline" onClick={resetState}>Split More PDFs</Button>
+                  <Button variant="outline" onClick={resetState}>Diviser d'autres PDF</Button>
                   <Button onClick={handleDownloadAll} disabled={processedFiles.length === 0}>
-                    <Package /> Download All (.zip)
+                    <Package /> Tout télécharger (.zip)
                   </Button>
               </CardFooter>
             </Card>
@@ -271,9 +271,9 @@ export default function Home() {
                 <div className="flex justify-center items-center">
                   <UploadCloud className="h-12 w-12 text-muted-foreground" />
                 </div>
-                <p className="mt-4 font-semibold text-lg">Drag & drop files here</p>
-                <p className="text-sm text-muted-foreground">or click to browse</p>
-                <p className="text-xs text-muted-foreground mt-2">Accepted format: .pdf</p>
+                <p className="mt-4 font-semibold text-lg">Glissez-déposez les fichiers ici</p>
+                <p className="text-sm text-muted-foreground">ou cliquez pour parcourir</p>
+                <p className="text-xs text-muted-foreground mt-2">Format accepté : .pdf</p>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -288,8 +288,8 @@ export default function Home() {
             {files.length > 0 && (
               <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle>Files to Process</CardTitle>
-                  <CardDescription>{files.length} file(s) selected. Click "Split PDFs" to start.</CardDescription>
+                  <CardTitle>Fichiers à traiter</CardTitle>
+                  <CardDescription>{files.length} fichier(s) sélectionné(s). Cliquez sur "Diviser les PDF" pour commencer.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
@@ -301,7 +301,7 @@ export default function Home() {
                         </div>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeFile(index)}>
                           <X className="h-4 w-4"/>
-                          <span className="sr-only">Remove file</span>
+                          <span className="sr-only">Supprimer le fichier</span>
                         </Button>
                       </li>
                     ))}
@@ -310,7 +310,7 @@ export default function Home() {
                 <CardFooter className="justify-end border-t pt-6 mt-6">
                     <Button onClick={handleProcessPdfs} disabled={files.length === 0}>
                         <Scissors />
-                        Split PDFs
+                        Diviser les PDF
                     </Button>
                 </CardFooter>
               </Card>
@@ -323,3 +323,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

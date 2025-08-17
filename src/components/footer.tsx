@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -11,7 +12,9 @@ export function Footer() {
 
   return (
     <footer className="text-center mt-12 text-sm text-muted-foreground">
-      {year && <p>&copy; {year} PDF Splitter. All rights reserved.</p>}
+      {year && <p>&copy; {year} Snowtech. Tous droits réservés.</p>}
     </footer>
   );
 }
+
+    
