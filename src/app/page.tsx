@@ -109,38 +109,37 @@ export default function Home() {
       const file = files[i];
       try {
         const existingPdfBytes = await file.arrayBuffer();
-        const pdfDoc = await PDFDocument.load(existingPdfBytes, { 
-          // Some PDFs have issues with metadata, this can help
-          updateMetadata: false 
+        const pdfDoc = await PDFDocument.load(existingPdfBytes, {
+          updateMetadata: false
         });
         const newPdfDoc = await PDFDocument.create();
 
-        for (const page of pdfDoc.getPages()) {
-          const { width, height } = page.getSize();
+        for (const originalPage of pdfDoc.getPages()) {
+          const { width, height } = originalPage.getSize();
           const halfWidth = width / 2;
 
           // Embed the original page
-          const embeddedPage = await newPdfDoc.embedPage(page);
+          const [embeddedPage] = await newPdfDoc.embedPdf(existingPdfBytes, [pdfDoc.getPages().indexOf(originalPage)]);
 
           // Create and draw left page
           const leftPage = newPdfDoc.addPage([halfWidth, height]);
           leftPage.drawPage(embeddedPage, {
             x: 0,
             y: 0,
-            width: halfWidth,
+            width: width,
             height: height,
           });
-          
+
           // Create and draw right page
           const rightPage = newPdfDoc.addPage([halfWidth, height]);
           rightPage.drawPage(embeddedPage, {
             x: -halfWidth,
             y: 0,
-            width: halfWidth,
+            width: width,
             height: height,
           });
         }
-
+        
         const newPdfBytes = await newPdfDoc.save();
         const splitPdfBlob = new Blob([newPdfBytes], { type: "application/pdf" });
         const splitPdfUrl = URL.createObjectURL(splitPdfBlob);
@@ -150,6 +149,7 @@ export default function Home() {
           splitPdfBlob,
           splitPdfUrl,
         });
+
       } catch (err) {
         console.error(err);
         toast({
@@ -323,4 +323,3 @@ export default function Home() {
     </div>
   );
 }
-    
