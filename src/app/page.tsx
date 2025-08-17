@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { PDFDocument } from "pdf-lib";
 import JSZip from "jszip";
 import { useToast } from "@/hooks/use-toast";
@@ -29,8 +29,13 @@ export default function Home() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [year, setYear] = useState(new Date().getFullYear());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setYear(new Date().getFullYear());
+  }, []);
 
   const handleFileChange = (selectedFiles: FileList | null) => {
     if (selectedFiles) {
@@ -114,22 +119,15 @@ export default function Home() {
           const { width, height } = page.getSize();
           const halfWidth = width / 2;
 
-          // Embed the original page
-          const embeddedPage = await newPdfDoc.embedPage(page);
-
           // Create left page
-          const leftPage = newPdfDoc.addPage([halfWidth, height]);
-          leftPage.drawPage(embeddedPage, {
-            x: 0,
-            y: 0,
-          });
-
+          const [leftPdfPage] = await newPdfDoc.copyPages(pdfDoc, [pdfDoc.getPages().indexOf(page)]);
+          leftPdfPage.setCropBox(0, 0, halfWidth, height);
+          newPdfDoc.addPage(leftPdfPage);
+          
           // Create right page
-          const rightPage = newPdfDoc.addPage([halfWidth, height]);
-          rightPage.drawPage(embeddedPage, {
-            x: -halfWidth,
-            y: 0,
-          });
+          const [rightPdfPage] = await newPdfDoc.copyPages(pdfDoc, [pdfDoc.getPages().indexOf(page)]);
+          rightPdfPage.setCropBox(halfWidth, 0, halfWidth, height);
+          newPdfDoc.addPage(rightPdfPage);
         }
 
         const newPdfBytes = await newPdfDoc.save();
@@ -310,8 +308,9 @@ export default function Home() {
         )}
       </main>
       <footer className="text-center mt-12 text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} PDF Splitter. All rights reserved.</p>
+        <p>&copy; {year} PDF Splitter. All rights reserved.</p>
       </footer>
     </div>
   );
-}
+
+    
