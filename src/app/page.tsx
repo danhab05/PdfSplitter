@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { PDFDocument } from "pdf-lib";
 import JSZip from "jszip";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +16,8 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { UploadCloud, FileText, Download, Package, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Footer } from "@/components/footer";
+
 
 type ProcessedFile = {
   originalName: string;
@@ -29,13 +31,8 @@ export default function Home() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [year, setYear] = useState(new Date().getFullYear());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    setYear(new Date().getFullYear());
-  }, []);
 
   const handleFileChange = (selectedFiles: FileList | null) => {
     if (selectedFiles) {
@@ -122,11 +119,13 @@ export default function Home() {
           // Create left page
           const [leftPdfPage] = await newPdfDoc.copyPages(pdfDoc, [pdfDoc.getPages().indexOf(page)]);
           leftPdfPage.setCropBox(0, 0, halfWidth, height);
-          newPdfDoc.addPage(leftPdfPage);
           
           // Create right page
           const [rightPdfPage] = await newPdfDoc.copyPages(pdfDoc, [pdfDoc.getPages().indexOf(page)]);
           rightPdfPage.setCropBox(halfWidth, 0, halfWidth, height);
+
+          // Add pages to the new document
+          newPdfDoc.addPage(leftPdfPage);
           newPdfDoc.addPage(rightPdfPage);
         }
 
@@ -307,10 +306,7 @@ export default function Home() {
           </div>
         )}
       </main>
-      <footer className="text-center mt-12 text-sm text-muted-foreground">
-        <p>&copy; {year} PDF Splitter. All rights reserved.</p>
-      </footer>
+      <Footer />
     </div>
   );
-
-    
+}
