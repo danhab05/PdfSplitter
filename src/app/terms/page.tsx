@@ -12,7 +12,7 @@ export default function TermsOfUse() {
             <CardTitle className="text-3xl font-bold text-center">Conditions d'utilisation</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 text-muted-foreground">
-            <p>Dernière mise à jour : 25 juillet 2024</p>
+            <p>Dernière mise à jour : 4 septembre 2025</p>
             
             <p>
               Bienvenue sur Diviseur de PDF. En accédant ou en utilisant notre service, vous acceptez d'être lié par les présentes conditions d'utilisation. Si vous n'êtes pas d'accord avec une partie des conditions, vous ne pouvez pas accéder au service.
