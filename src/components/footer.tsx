@@ -1,20 +1,16 @@
-
 "use client";
 
-import { useState, useEffect } from "react";
+import Link from "next/link";
 
 export function Footer() {
-  const [year, setYear] = useState<number | null>(null);
-
-  useEffect(() => {
-    setYear(new Date().getFullYear());
-  }, []);
-
   return (
     <footer className="text-center mt-12 text-sm text-muted-foreground">
-      {year && <p>&copy; {year} Snowtech. Tous droits réservés.</p>}
+      <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
+        <p>&copy; 2025 Habib Dan. Tous droits réservés.</p>
+        <Link href="/terms" className="underline hover:text-primary">
+          Conditions d'utilisation
+        </Link>
+      </div>
     </footer>
   );
 }
-
-    
